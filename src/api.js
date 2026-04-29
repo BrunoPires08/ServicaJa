@@ -5,7 +5,7 @@
 // Endereço do servidor
 // Durante desenvolvimento usamos o IP da máquina
 // IMPORTANTE: troca pelo IP do seu computador na rede
-const BASE_URL = 'http://192.168.0.5:3000';
+const BASE_URL = 'http://192.168.0.148:3000';
 // Função de login
 export async function loginUsuario(email, senha) {
   try {
