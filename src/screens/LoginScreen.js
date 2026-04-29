@@ -20,7 +20,7 @@ export default function LoginScreen({ navigation }) {
     // Por enquanto só navega para Home
     // Depois vamos conectar com o backend real
     if (email && senha) {
-      navigation.replace('Home');
+      navigation.replace('Main');
     } else {
       alert('Preencha email e senha!');
     }
