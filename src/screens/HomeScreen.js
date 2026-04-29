@@ -1,14 +1,10 @@
 // HomeScreen.js
-// Tela principal do app após o login
-// Mostra categorias de serviço e prestadores em destaque
-
 import { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, TextInput
 } from 'react-native';
 
-// Dados temporários - depois virão do banco de dados real
 const CATEGORIAS = [
   { id: 1, icone: '🔧', nome: 'Reparos' },
   { id: 2, icone: '🧹', nome: 'Limpeza' },
@@ -32,7 +28,6 @@ export default function HomeScreen({ navigation }) {
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
 
-        {/* Cabeçalho */}
         <View style={styles.header}>
           <View>
             <Text style={styles.saudacao}>Olá, Bruno 👋</Text>
@@ -43,7 +38,6 @@ export default function HomeScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Barra de busca */}
         <View style={styles.buscaContainer}>
           <Text style={styles.buscaIcone}>🔍</Text>
           <TextInput
@@ -55,7 +49,6 @@ export default function HomeScreen({ navigation }) {
           />
         </View>
 
-        {/* Categorias */}
         <Text style={styles.secaoTitulo}>Categorias</Text>
         <View style={styles.categoriasGrid}>
           {CATEGORIAS.map((cat) => (
@@ -66,10 +59,15 @@ export default function HomeScreen({ navigation }) {
           ))}
         </View>
 
-        {/* Prestadores em destaque */}
         <Text style={styles.secaoTitulo}>Mais avaliados</Text>
+
+        {/* ✅ onPress adicionado — clica no prestador e vai para Agendamento */}
         {PRESTADORES.map((p) => (
-          <TouchableOpacity key={p.id} style={styles.prestadorCard}>
+          <TouchableOpacity
+            key={p.id}
+            style={styles.prestadorCard}
+            onPress={() => navigation.navigate('Agendamento', { prestador: p })}
+          >
             <View style={styles.prestadorAvatar}>
               <Text style={styles.prestadorAvatarTexto}>
                 {p.nome.split(' ').map(n => n[0]).join('')}
