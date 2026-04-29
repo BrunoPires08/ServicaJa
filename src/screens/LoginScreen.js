@@ -1,39 +1,39 @@
-// LoginScreen.js
-// Tela de login com email e senha
-// O botão "Entrar" vai para a Home (por enquanto)
-// O botão "Criar conta" vai para a tela de Cadastro
-
 import { useState } from 'react';
 import {
   View, Text, TextInput,
   TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform
+  KeyboardAvoidingView, Platform, ActivityIndicator, Alert
 } from 'react-native';
+import { loginUsuario } from '../api';
 
 export default function LoginScreen({ navigation }) {
 
-  // useState guarda o que o usuário digita
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [carregando, setCarregando] = useState(false);
 
-  function handleLogin() {
-    // Por enquanto só navega para Home
-    // Depois vamos conectar com o backend real
-    if (email && senha) {
-      navigation.replace('Main');
+  async function handleLogin() {
+    if (!email || !senha) {
+      Alert.alert('Atenção', 'Preencha email e senha!');
+      return;
+    }
+    setCarregando(true);
+    const resultado = await loginUsuario(email, senha);
+    setCarregando(false);
+
+    if (resultado.erro) {
+      Alert.alert('Erro', resultado.erro);
     } else {
-      alert('Preencha email e senha!');
+      // Login OK — vai para o app
+      navigation.replace('Main');
     }
   }
 
   return (
-    // KeyboardAvoidingView empurra a tela para cima
-    // quando o teclado do celular abre
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      {/* Logo no topo */}
       <View style={styles.logoArea}>
         <Text style={styles.logoTexto}>serviç</Text>
         <Text style={styles.logoDestaque}>já</Text>
@@ -41,16 +41,14 @@ export default function LoginScreen({ navigation }) {
 
       <Text style={styles.subtitulo}>Bem-vindo de volta!</Text>
 
-      {/* Campos de entrada */}
       <View style={styles.form}>
-
         <Text style={styles.label}>Email</Text>
         <TextInput
           style={styles.input}
           placeholder="seu@email.com"
           placeholderTextColor="#9DB5AE"
           value={email}
-          onChangeText={setEmail}   // atualiza a variável a cada letra
+          onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
         />
@@ -62,15 +60,20 @@ export default function LoginScreen({ navigation }) {
           placeholderTextColor="#9DB5AE"
           value={senha}
           onChangeText={setSenha}
-          secureTextEntry={true}    // esconde os caracteres
+          secureTextEntry={true}
         />
 
-        {/* Botão principal */}
-        <TouchableOpacity style={styles.botaoPrincipal} onPress={handleLogin}>
-          <Text style={styles.botaoPrincipalTexto}>Entrar</Text>
+        <TouchableOpacity
+          style={styles.botaoPrincipal}
+          onPress={handleLogin}
+          disabled={carregando}
+        >
+          {carregando
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={styles.botaoPrincipalTexto}>Entrar</Text>
+          }
         </TouchableOpacity>
 
-        {/* Link para cadastro */}
         <TouchableOpacity
           style={styles.botaoSecundario}
           onPress={() => navigation.navigate('Cadastro')}
@@ -79,7 +82,6 @@ export default function LoginScreen({ navigation }) {
             Não tem conta? <Text style={styles.link}>Criar conta</Text>
           </Text>
         </TouchableOpacity>
-
       </View>
     </KeyboardAvoidingView>
   );

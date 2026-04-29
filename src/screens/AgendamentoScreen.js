@@ -51,7 +51,7 @@ export default function AgendamentoScreen({ navigation, route }) {
     Alert.alert(
       'Agendamento confirmado! 🎉',
       `${prestador.nome}\n${diaSelecionado.dataCompleta} às ${horarioSelecionado}`,
-      [{ text: 'Ótimo!', onPress: () => navigation.navigate('Home') }]
+      [{ text: 'Ótimo!', onPress: () => navigation.navigate('Main') }]
     );
   }
 

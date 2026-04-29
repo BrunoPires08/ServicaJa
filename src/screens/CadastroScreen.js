@@ -1,29 +1,42 @@
-// CadastroScreen.js
-// Tela de cadastro - o usuário escolhe se é cliente ou prestador
-// Isso é importante pois cada perfil tem funcionalidades diferentes
-
 import { useState } from 'react';
 import {
   View, Text, TextInput,
   TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView
+  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Alert
 } from 'react-native';
+import { cadastrarUsuario } from '../api';
 
 export default function CadastroScreen({ navigation }) {
 
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [tipo, setTipo] = useState('usuario'); // 'usuario' ou 'prestador'
+  const [tipo, setTipo] = useState('usuario');
+  const [carregando, setCarregando] = useState(false);
 
-  function handleCadastro() {
+  async function handleCadastro() {
     if (!nome || !email || !senha) {
-      alert('Preencha todos os campos!');
+      Alert.alert('Atenção', 'Preencha todos os campos!');
       return;
     }
-    // Por enquanto só navega para Home
-    // Depois vamos salvar no banco de dados real
-    navigation.replace('Home');
+    if (senha.length < 6) {
+      Alert.alert('Atenção', 'A senha deve ter pelo menos 6 caracteres!');
+      return;
+    }
+
+    setCarregando(true);
+    const resultado = await cadastrarUsuario(nome, email, senha, tipo);
+    setCarregando(false);
+
+    if (resultado.erro) {
+      Alert.alert('Erro', resultado.erro);
+    } else {
+      Alert.alert(
+        'Conta criada! 🎉',
+        `Bem-vindo ao ServicaJá, ${nome}!`,
+        [{ text: 'Entrar', onPress: () => navigation.replace('Main') }]
+      );
+    }
   }
 
   return (
@@ -35,51 +48,34 @@ export default function CadastroScreen({ navigation }) {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-
         <Text style={styles.titulo}>Criar conta</Text>
         <Text style={styles.subtitulo}>É rápido e gratuito</Text>
 
-        {/* Seletor de tipo de conta */}
         <Text style={styles.label}>Você é:</Text>
         <View style={styles.tipoContainer}>
-
           <TouchableOpacity
-            style={[
-              styles.tipoBotao,
-              tipo === 'usuario' && styles.tipoBotaoAtivo  // destaca se selecionado
-            ]}
+            style={[styles.tipoBotao, tipo === 'usuario' && styles.tipoBotaoAtivo]}
             onPress={() => setTipo('usuario')}
           >
             <Text style={styles.tipoIcone}>👤</Text>
-            <Text style={[
-              styles.tipoTexto,
-              tipo === 'usuario' && styles.tipoTextoAtivo
-            ]}>
+            <Text style={[styles.tipoTexto, tipo === 'usuario' && styles.tipoTextoAtivo]}>
               Cliente
             </Text>
             <Text style={styles.tipoDesc}>Quero contratar serviços</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[
-              styles.tipoBotao,
-              tipo === 'prestador' && styles.tipoBotaoAtivo
-            ]}
+            style={[styles.tipoBotao, tipo === 'prestador' && styles.tipoBotaoAtivo]}
             onPress={() => setTipo('prestador')}
           >
             <Text style={styles.tipoIcone}>🔧</Text>
-            <Text style={[
-              styles.tipoTexto,
-              tipo === 'prestador' && styles.tipoTextoAtivo
-            ]}>
+            <Text style={[styles.tipoTexto, tipo === 'prestador' && styles.tipoTextoAtivo]}>
               Prestador
             </Text>
             <Text style={styles.tipoDesc}>Quero oferecer serviços</Text>
           </TouchableOpacity>
-
         </View>
 
-        {/* Campos */}
         <Text style={styles.label}>Nome completo</Text>
         <TextInput
           style={styles.input}
@@ -110,8 +106,15 @@ export default function CadastroScreen({ navigation }) {
           secureTextEntry={true}
         />
 
-        <TouchableOpacity style={styles.botaoPrincipal} onPress={handleCadastro}>
-          <Text style={styles.botaoPrincipalTexto}>Criar conta</Text>
+        <TouchableOpacity
+          style={styles.botaoPrincipal}
+          onPress={handleCadastro}
+          disabled={carregando}
+        >
+          {carregando
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={styles.botaoPrincipalTexto}>Criar conta</Text>
+          }
         </TouchableOpacity>
 
         <TouchableOpacity
