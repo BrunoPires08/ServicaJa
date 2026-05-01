@@ -1,12 +1,20 @@
 // api.js
-// Arquivo central de comunicação com o servidor
-// Todas as chamadas ao backend passam por aqui
+// Comunicação central com o backend
 
-// Endereço do servidor
-// Durante desenvolvimento usamos o IP da máquina
-// IMPORTANTE: troca pelo IP do seu computador na rede
-const BASE_URL = 'http://192.168.0.148:3000';
-// Função de login
+const BASE_URL = 'http://192.168.0.5:3000';
+
+// Guarda o token na memória do app
+let tokenAtual = null;
+
+export function salvarToken(token) {
+  tokenAtual = token;
+}
+
+export function getToken() {
+  return tokenAtual;
+}
+
+// Login
 export async function loginUsuario(email, senha) {
   try {
     const resposta = await fetch(`${BASE_URL}/auth/login`, {
@@ -15,13 +23,14 @@ export async function loginUsuario(email, senha) {
       body: JSON.stringify({ email, senha })
     });
     const dados = await resposta.json();
+    if (dados.token) salvarToken(dados.token);
     return dados;
   } catch (erro) {
     return { erro: 'Servidor indisponível. Tente novamente.' };
   }
 }
 
-// Função de cadastro
+// Cadastro
 export async function cadastrarUsuario(nome, email, senha, tipo) {
   try {
     const resposta = await fetch(`${BASE_URL}/auth/cadastro`, {
@@ -30,39 +39,51 @@ export async function cadastrarUsuario(nome, email, senha, tipo) {
       body: JSON.stringify({ nome, email, senha, tipo })
     });
     const dados = await resposta.json();
+    if (dados.token) salvarToken(dados.token);
     return dados;
   } catch (erro) {
     return { erro: 'Servidor indisponível. Tente novamente.' };
   }
 }
 
-// Função para criar agendamento
-export async function criarAgendamento(token, dados) {
+// Criar agendamento
+export async function criarAgendamento(dados) {
   try {
     const resposta = await fetch(`${BASE_URL}/agendamentos`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'authorization': token
+        'authorization': tokenAtual
       },
       body: JSON.stringify(dados)
     });
-    const resultado = await resposta.json();
-    return resultado;
+    return await resposta.json();
   } catch (erro) {
     return { erro: 'Servidor indisponível. Tente novamente.' };
   }
 }
 
-// Função para buscar agendamentos do usuário
-export async function buscarAgendamentos(token) {
+// Buscar agendamentos
+export async function buscarAgendamentos() {
   try {
     const resposta = await fetch(`${BASE_URL}/agendamentos`, {
-      headers: { 'authorization': token }
+      headers: { 'authorization': tokenAtual }
     });
-    const dados = await resposta.json();
-    return dados;
+    return await resposta.json();
   } catch (erro) {
     return [];
+  }
+}
+
+// Cancelar agendamento
+export async function cancelarAgendamento(id) {
+  try {
+    const resposta = await fetch(`${BASE_URL}/agendamentos/${id}/cancelar`, {
+      method: 'PATCH',
+      headers: { 'authorization': tokenAtual }
+    });
+    return await resposta.json();
+  } catch (erro) {
+    return { erro: 'Servidor indisponível. Tente novamente.' };
   }
 }

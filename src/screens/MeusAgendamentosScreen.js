@@ -1,89 +1,112 @@
-// MeusAgendamentosScreen.js
-// Lista de agendamentos do usuário
-
+import { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity
+  View, Text, StyleSheet, ScrollView,
+  TouchableOpacity, ActivityIndicator, Alert
 } from 'react-native';
-
-const AGENDAMENTOS = [
-  {
-    id: 1,
-    prestador: 'Carlos Rocha',
-    servico: 'Eletricista',
-    data: '28/04/2026',
-    hora: '14:00',
-    status: 'confirmado',
-  },
-  {
-    id: 2,
-    prestador: 'Marta Lima',
-    servico: 'Limpeza',
-    data: '29/04/2026',
-    hora: '09:00',
-    status: 'pendente',
-  },
-  {
-    id: 3,
-    prestador: 'João Fix',
-    servico: 'Encanador',
-    data: '24/04/2026',
-    hora: '11:00',
-    status: 'concluido',
-  },
-];
+import { buscarAgendamentos, cancelarAgendamento } from '../api';
 
 export default function MeusAgendamentosScreen() {
+
+  const [agendamentos, setAgendamentos] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+
+  // Busca os agendamentos quando a tela abre
+  useEffect(() => {
+    carregarAgendamentos();
+  }, []);
+
+  async function carregarAgendamentos() {
+    setCarregando(true);
+    const dados = await buscarAgendamentos();
+    setAgendamentos(Array.isArray(dados) ? dados : []);
+    setCarregando(false);
+  }
+
+  async function handleCancelar(id) {
+    Alert.alert(
+      'Cancelar agendamento',
+      'Tem certeza que deseja cancelar?',
+      [
+        { text: 'Não', style: 'cancel' },
+        {
+          text: 'Sim, cancelar',
+          style: 'destructive',
+          onPress: async () => {
+            const resultado = await cancelarAgendamento(id);
+            if (resultado.erro) {
+              Alert.alert('Erro', resultado.erro);
+            } else {
+              carregarAgendamentos();
+            }
+          }
+        }
+      ]
+    );
+  }
+
+  if (carregando) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#1D9E75" />
+        <Text style={styles.loadingTexto}>Carregando agendamentos...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-
       <Text style={styles.titulo}>Meus Agendamentos</Text>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {AGENDAMENTOS.map((ag) => (
-          <View key={ag.id} style={styles.card}>
+        {agendamentos.length === 0 ? (
+          <View style={styles.vazioContainer}>
+            <Text style={styles.vazioIcone}>📅</Text>
+            <Text style={styles.vazioTexto}>Nenhum agendamento ainda</Text>
+            <Text style={styles.vazioSubtexto}>Agende um serviço na tela inicial!</Text>
+          </View>
+        ) : (
+          agendamentos.map((ag) => (
+            <View key={ag.id} style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarTexto}>
+                    {ag.prestador_nome?.split(' ').map(n => n[0]).join('')}
+                  </Text>
+                </View>
+                <View style={styles.info}>
+                  <Text style={styles.prestadorNome}>{ag.prestador_nome}</Text>
+                  <Text style={styles.servico}>{ag.servico}</Text>
+                </View>
+                <View style={[
+                  styles.badge,
+                  ag.status === 'pendente' && styles.badgePendente,
+                  ag.status === 'confirmado' && styles.badgeConfirmado,
+                  ag.status === 'cancelado' && styles.badgeCancelado,
+                ]}>
+                  <Text style={styles.badgeTexto}>
+                    {ag.status === 'pendente' ? '⏳ Pendente' : ''}
+                    {ag.status === 'confirmado' ? '✓ Confirmado' : ''}
+                    {ag.status === 'cancelado' ? '✕ Cancelado' : ''}
+                  </Text>
+                </View>
+              </View>
 
-            {/* Linha superior */}
-            <View style={styles.cardHeader}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarTexto}>
-                  {ag.prestador.split(' ').map(n => n[0]).join('')}
-                </Text>
+              <View style={styles.cardFooter}>
+                <Text style={styles.dataHora}>📅 {ag.data} às {ag.hora}</Text>
+                <Text style={styles.preco}>💰 {ag.preco}</Text>
               </View>
-              <View style={styles.info}>
-                <Text style={styles.prestadorNome}>{ag.prestador}</Text>
-                <Text style={styles.servico}>{ag.servico}</Text>
-              </View>
-              <View style={[
-                styles.badge,
-                ag.status === 'confirmado' && styles.badgeConfirmado,
-                ag.status === 'pendente' && styles.badgePendente,
-                ag.status === 'concluido' && styles.badgeConcluido,
-              ]}>
-                <Text style={styles.badgeTexto}>
-                  {ag.status === 'confirmado' ? '✓ Confirmado' : ''}
-                  {ag.status === 'pendente' ? '⏳ Pendente' : ''}
-                  {ag.status === 'concluido' ? '✅ Concluído' : ''}
-                </Text>
-              </View>
-            </View>
 
-            {/* Linha inferior */}
-            <View style={styles.cardFooter}>
-              <Text style={styles.dataHora}>📅 {ag.data} às {ag.hora}</Text>
-              {ag.status === 'concluido' && (
-                <TouchableOpacity style={styles.botaoAvaliar}>
-                  <Text style={styles.botaoAvaliarTexto}>⭐ Avaliar</Text>
-                </TouchableOpacity>
-              )}
-              {ag.status === 'confirmado' && (
-                <TouchableOpacity style={styles.botaoCancelar}>
+              {ag.status === 'pendente' && (
+                <TouchableOpacity
+                  style={styles.botaoCancelar}
+                  onPress={() => handleCancelar(ag.id)}
+                >
                   <Text style={styles.botaoCancelarTexto}>Cancelar</Text>
                 </TouchableOpacity>
               )}
             </View>
-
-          </View>
-        ))}
+          ))
+        )}
         <View style={{ height: 32 }} />
       </ScrollView>
     </View>
@@ -97,11 +120,40 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: 24,
   },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#1A2E26',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  loadingTexto: {
+    color: '#9DB5AE',
+    fontSize: 14,
+  },
   titulo: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 24,
+  },
+  vazioContainer: {
+    alignItems: 'center',
+    marginTop: 80,
+    gap: 8,
+  },
+  vazioIcone: {
+    fontSize: 48,
+    marginBottom: 8,
+  },
+  vazioTexto: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  vazioSubtexto: {
+    fontSize: 14,
+    color: '#9DB5AE',
   },
   card: {
     backgroundColor: '#243D35',
@@ -130,9 +182,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 14,
   },
-  info: {
-    flex: 1,
-  },
+  info: { flex: 1 },
   prestadorNome: {
     color: '#FFFFFF',
     fontSize: 15,
@@ -148,15 +198,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 20,
   },
-  badgeConfirmado: {
-    backgroundColor: '#1A3D2E',
-  },
-  badgePendente: {
-    backgroundColor: '#3D2E1A',
-  },
-  badgeConcluido: {
-    backgroundColor: '#1A2A3D',
-  },
+  badgePendente: { background: '#3D2E1A' },
+  badgeConfirmado: { backgroundColor: '#1A3D2E' },
+  badgeCancelado: { backgroundColor: '#3D1A1A' },
   badgeTexto: {
     fontSize: 11,
     color: '#9DB5AE',
@@ -164,36 +208,30 @@ const styles = StyleSheet.create({
   },
   cardFooter: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
     borderTopWidth: 1,
     borderTopColor: '#2E5446',
     paddingTop: 10,
+    marginBottom: 8,
   },
   dataHora: {
     color: '#9DB5AE',
     fontSize: 13,
   },
-  botaoAvaliar: {
-    backgroundColor: '#1D9E75',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  botaoAvaliarTexto: {
-    color: '#FFFFFF',
-    fontSize: 12,
+  preco: {
+    color: '#1D9E75',
+    fontSize: 13,
     fontWeight: 'bold',
   },
   botaoCancelar: {
     borderWidth: 1,
     borderColor: '#FF6B6B',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
     borderRadius: 8,
+    padding: 8,
+    alignItems: 'center',
   },
   botaoCancelarTexto: {
     color: '#FF6B6B',
-    fontSize: 12,
+    fontSize: 13,
   },
 });

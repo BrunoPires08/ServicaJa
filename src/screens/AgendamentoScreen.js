@@ -1,20 +1,15 @@
-// AgendamentoScreen.js
-// Tela de agendamento de serviço
-// O usuário escolhe a data, horário e confirma
-
 import { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Alert
+  TouchableOpacity, Alert, ActivityIndicator
 } from 'react-native';
+import { criarAgendamento } from '../api';
 
-// Horários disponíveis (depois virão do backend)
 const HORARIOS = [
   '08:00', '09:00', '10:00', '11:00',
   '13:00', '14:00', '15:00', '16:00', '17:00'
 ];
 
-// Gera os próximos 7 dias para escolha
 function gerarDias() {
   const dias = [];
   const semana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -33,7 +28,6 @@ function gerarDias() {
 
 export default function AgendamentoScreen({ navigation, route }) {
 
-  // Recebe os dados do prestador da tela anterior
   const prestador = route.params?.prestador || {
     nome: 'Carlos Rocha',
     servico: 'Eletricista',
@@ -42,23 +36,37 @@ export default function AgendamentoScreen({ navigation, route }) {
 
   const [diaSelecionado, setDiaSelecionado] = useState(null);
   const [horarioSelecionado, setHorarioSelecionado] = useState(null);
+  const [carregando, setCarregando] = useState(false);
 
-  function handleConfirmar() {
+  async function handleConfirmar() {
     if (!diaSelecionado || !horarioSelecionado) {
       Alert.alert('Atenção', 'Selecione um dia e horário!');
       return;
     }
-    Alert.alert(
-      'Agendamento confirmado! 🎉',
-      `${prestador.nome}\n${diaSelecionado.dataCompleta} às ${horarioSelecionado}`,
-      [{ text: 'Ótimo!', onPress: () => navigation.navigate('Main') }]
-    );
+
+    setCarregando(true);
+    const resultado = await criarAgendamento({
+      prestadorNome: prestador.nome,
+      servico: prestador.servico,
+      data: diaSelecionado.dataCompleta,
+      hora: horarioSelecionado,
+      preco: prestador.preco,
+    });
+    setCarregando(false);
+
+    if (resultado.erro) {
+      Alert.alert('Erro', resultado.erro);
+    } else {
+      Alert.alert(
+        'Agendamento confirmado! 🎉',
+        `${prestador.nome}\n${diaSelecionado.dataCompleta} às ${horarioSelecionado}`,
+        [{ text: 'Ótimo!', onPress: () => navigation.navigate('Main') }]
+      );
+    }
   }
 
   return (
     <View style={styles.container}>
-
-      {/* Header com botão voltar */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.voltar}>← Voltar</Text>
@@ -68,8 +76,6 @@ export default function AgendamentoScreen({ navigation, route }) {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-
-        {/* Card do prestador */}
         <View style={styles.prestadorCard}>
           <View style={styles.prestadorAvatar}>
             <Text style={styles.prestadorAvatarTexto}>
@@ -83,29 +89,19 @@ export default function AgendamentoScreen({ navigation, route }) {
           </View>
         </View>
 
-        {/* Seleção de dia */}
         <Text style={styles.secaoTitulo}>Escolha o dia</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View style={styles.diasContainer}>
             {gerarDias().map((dia) => (
               <TouchableOpacity
                 key={dia.id}
-                style={[
-                  styles.diaCard,
-                  diaSelecionado?.id === dia.id && styles.diaCardAtivo
-                ]}
+                style={[styles.diaCard, diaSelecionado?.id === dia.id && styles.diaCardAtivo]}
                 onPress={() => setDiaSelecionado(dia)}
               >
-                <Text style={[
-                  styles.diaSemana,
-                  diaSelecionado?.id === dia.id && styles.textoAtivo
-                ]}>
+                <Text style={[styles.diaSemana, diaSelecionado?.id === dia.id && styles.textoAtivo]}>
                   {dia.diaSemana}
                 </Text>
-                <Text style={[
-                  styles.diaNumero,
-                  diaSelecionado?.id === dia.id && styles.textoAtivo
-                ]}>
+                <Text style={[styles.diaNumero, diaSelecionado?.id === dia.id && styles.textoAtivo]}>
                   {dia.dia}
                 </Text>
               </TouchableOpacity>
@@ -113,29 +109,21 @@ export default function AgendamentoScreen({ navigation, route }) {
           </View>
         </ScrollView>
 
-        {/* Seleção de horário */}
         <Text style={styles.secaoTitulo}>Escolha o horário</Text>
         <View style={styles.horariosGrid}>
           {HORARIOS.map((hora) => (
             <TouchableOpacity
               key={hora}
-              style={[
-                styles.horarioCard,
-                horarioSelecionado === hora && styles.horarioCardAtivo
-              ]}
+              style={[styles.horarioCard, horarioSelecionado === hora && styles.horarioCardAtivo]}
               onPress={() => setHorarioSelecionado(hora)}
             >
-              <Text style={[
-                styles.horarioTexto,
-                horarioSelecionado === hora && styles.textoAtivo
-              ]}>
+              <Text style={[styles.horarioTexto, horarioSelecionado === hora && styles.textoAtivo]}>
                 {hora}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Resumo */}
         {diaSelecionado && horarioSelecionado && (
           <View style={styles.resumoCard}>
             <Text style={styles.resumoTitulo}>Resumo do agendamento</Text>
@@ -146,15 +134,18 @@ export default function AgendamentoScreen({ navigation, route }) {
           </View>
         )}
 
-        {/* Botão confirmar */}
         <TouchableOpacity
           style={[
             styles.botaoConfirmar,
             (!diaSelecionado || !horarioSelecionado) && styles.botaoDesabilitado
           ]}
           onPress={handleConfirmar}
+          disabled={carregando}
         >
-          <Text style={styles.botaoConfirmarTexto}>Confirmar agendamento</Text>
+          {carregando
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={styles.botaoConfirmarTexto}>Confirmar agendamento</Text>
+          }
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />
@@ -211,9 +202,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 18,
   },
-  prestadorInfo: {
-    flex: 1,
-  },
+  prestadorInfo: { flex: 1 },
   prestadorNome: {
     color: '#FFFFFF',
     fontSize: 17,
@@ -266,9 +255,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
-  textoAtivo: {
-    color: '#FFFFFF',
-  },
+  textoAtivo: { color: '#FFFFFF' },
   horariosGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -321,9 +308,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: 24,
   },
-  botaoDesabilitado: {
-    opacity: 0.5,
-  },
+  botaoDesabilitado: { opacity: 0.5 },
   botaoConfirmarTexto: {
     color: '#FFFFFF',
     fontSize: 16,

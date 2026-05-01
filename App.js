@@ -1,27 +1,20 @@
-// App.js — com Tab Bar na parte inferior
-
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text } from 'react-native';
 
-// Telas de autenticação
 import SplashScreen from './src/screens/SplashScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import CadastroScreen from './src/screens/CadastroScreen';
-
-// Telas principais (dentro da tab bar)
 import HomeScreen from './src/screens/HomeScreen';
 import MeusAgendamentosScreen from './src/screens/MeusAgendamentosScreen';
 import PerfilScreen from './src/screens/PerfilScreen';
-
-// Telas de fluxo (sem tab bar)
 import AgendamentoScreen from './src/screens/AgendamentoScreen';
+import PainelPrestadorScreen from './src/screens/PainelPrestadorScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Tab bar — telas principais do app
 function MainTabs() {
   return (
     <Tab.Navigator
@@ -65,6 +58,16 @@ function MainTabs() {
         }}
       />
       <Tab.Screen
+        name="Prestador"
+        component={PainelPrestadorScreen}
+        options={{
+          tabBarLabel: 'Painel',
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 20, color }}>🔧</Text>
+          ),
+        }}
+      />
+      <Tab.Screen
         name="Perfil"
         component={PerfilScreen}
         options={{
@@ -78,7 +81,6 @@ function MainTabs() {
   );
 }
 
-// Stack principal — controla autenticação vs app
 export default function App() {
   return (
     <NavigationContainer>
@@ -86,13 +88,10 @@ export default function App() {
         initialRouteName="Splash"
         screenOptions={{ headerShown: false }}
       >
-        {/* Telas sem tab bar */}
         <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Cadastro" component={CadastroScreen} />
         <Stack.Screen name="Agendamento" component={AgendamentoScreen} />
-
-        {/* App principal com tab bar */}
         <Stack.Screen name="Main" component={MainTabs} />
       </Stack.Navigator>
     </NavigationContainer>
