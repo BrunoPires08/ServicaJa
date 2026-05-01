@@ -11,6 +11,7 @@ import MeusAgendamentosScreen from './src/screens/MeusAgendamentosScreen';
 import PerfilScreen from './src/screens/PerfilScreen';
 import AgendamentoScreen from './src/screens/AgendamentoScreen';
 import PainelPrestadorScreen from './src/screens/PainelPrestadorScreen';
+import AvaliacaoScreen from './src/screens/AvaliacaoScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -92,6 +93,7 @@ export default function App() {
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Cadastro" component={CadastroScreen} />
         <Stack.Screen name="Agendamento" component={AgendamentoScreen} />
+        <Stack.Screen name="Avaliacao" component={AvaliacaoScreen} />
         <Stack.Screen name="Main" component={MainTabs} />
       </Stack.Navigator>
     </NavigationContainer>
